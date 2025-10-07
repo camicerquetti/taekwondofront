@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Picker, ScrollView } from 'react-native';
 import Header from '../components/header'; // Asegúrate de que exportas default
 import Footer from '../components/footer'; // Si también tienes Footer
-
+import { useNavigation } from '@react-navigation/native';
 const PlanScreen = () => {
   const [currentPlan, setCurrentPlan] = useState('Basico');
   const [newPlan, setNewPlan] = useState('Pro');
-
+  const navigation = useNavigation();
   return (
     <View style={styles.container}>
       <Header />
@@ -38,9 +38,12 @@ const PlanScreen = () => {
           <Text style={styles.saveButtonText}>Guardar</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.backButton}>
-          <Text style={styles.backButtonText}>Volver</Text>
-        </TouchableOpacity>
+         <TouchableOpacity
+      style={styles.backButton}
+      onPress={() => navigation.goBack()}
+    >
+      <Text style={styles.backButtonText}>Volver</Text>
+    </TouchableOpacity>
       </ScrollView>
 
       <Footer />

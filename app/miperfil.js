@@ -19,7 +19,7 @@ const MiPerfilScreen = () => {
       try {
         const userId = await AsyncStorage.getItem('userId');
         if (userId) {
-          const response = await fetch(`http://localhost:5000/api/auth/usuarios/${userId}`);
+          const response = await fetch(`https://taekwondoitfapp.com/api/auth/usuarios/${userId}`);
           const data = await response.json();
           setUsuario(data);
           setNombre(data.nombre);
@@ -43,7 +43,7 @@ const MiPerfilScreen = () => {
     try {
       const userId = await AsyncStorage.getItem('userId');
       if (userId) {
-        const response = await fetch(`http://localhost:5000/api/auth/usuarios/${userId}`, {
+        const response = await fetch(`https://taekwondoitfapp.com/api/auth/usuarios/${userId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

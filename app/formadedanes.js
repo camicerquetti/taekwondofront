@@ -7,6 +7,24 @@ import { FontAwesome } from '@expo/vector-icons';
 import Header from '../components/header';
 import Footer from '../components/footer';
 import SubscriptionScreen from './pro'; // << Asegurate de que el path sea correcto
+import { Image } from 'react-native';
+import ProImage from '../assets/images/pro.png';
+const formatoGrado = (grado) => {
+  const g = String(grado).trim();  // convierte a string y limpia espacios
+  switch (g) {
+    case '1': return '1er Dan';
+    case '2': return '2do Dan';
+    case '3': return '3er Dan';
+    case '4': return '4to Dan';
+    case '5': return '5to Dan';
+    case '6': return '6to Dan';
+    case '7': return '7mo Dan';
+    case '8': return '8vo Dan';
+    case '9': return '9no Dan';
+    default: return `${g} Dan`;
+  }
+};
+
 
 // Componente de detalle visual mejorado
 const DetailDan = ({ tul, onBack }) => (
@@ -15,40 +33,35 @@ const DetailDan = ({ tul, onBack }) => (
       <Text style={{ fontSize: 16, marginBottom: 15 }}>← Volver a Danes</Text>
     </TouchableOpacity>
 
-    <View style={styles.rowBetween}>
-      <Text style={styles.detailTitle}>{tul.nombre}</Text>
-      <View style={styles.colorContainer}>
-        {[...(tul.colores || '')].map((emoji, i) => (
-          <Text key={i} style={styles.emojiText}>{emoji}</Text>
-        ))}
-      </View>
+    {/* Etiqueta Plan Pro */}
+    <View style={styles.planPro}>
+      <Image source={ProImage} style={styles.proIcon} />
+  <Text style={styles.planText}>Plan Pro</Text>
     </View>
 
-    <Text style={styles.mov}>Grado: {tul.grado}</Text>
-    <Text style={styles.mov}>Plan: {tul.plan}</Text>
+    {/* Grado en texto más chico */}
+    <Text style={styles.mov}>{formatoGrado(tul.grado)}</Text>
 
+    {/* Nombre grande */}
+    <Text style={styles.detailTitle}>{tul.nombre}</Text>
+
+    {/* Flecha decorativa */}
+    <Text style={{ fontSize: 20, marginVertical: 10 }}>→</Text>
+
+    {/* Movimientos si existe */}
+    {tul.movimientos && (
+      <Text style={styles.mov}>{tul.movimientos} movimientos</Text>
+    )}
+
+    {/* Significado si existe */}
     {tul.significado && (
       <Text style={styles.bold}>{tul.significado}</Text>
     )}
 
-    {tul.descripcion?.split('\n\n').map((p, i) => (
-      <Text key={i} style={styles.desc}>{p}</Text>
-    ))}
-
+    {/* Botón iniciar */}
     <TouchableOpacity style={styles.startButton}>
       <Text style={styles.startText}>Iniciar</Text>
     </TouchableOpacity>
-
-    <View style={styles.buttonRow}>
-      <TouchableOpacity style={styles.planPro}>
-        <FontAwesome name="tree" size={16} color="black" style={{ marginRight: 5 }} />
-        <Text style={styles.planText}>Plan Pro</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.theoryButton}>
-        <Text style={styles.theoryText}>Teoría</Text>
-      </TouchableOpacity>
-    </View>
   </ScrollView>
 );
 
@@ -60,7 +73,7 @@ const DanesScreen = ({ navigation }) => {
   const [selectedTul, setSelectedTul] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/auth/tules')
+    fetch('https://taekwondoitfapp.com/api/auth/tules')
       .then(res => res.json())
       .then(data => {
         const filtered = data.filter(tul => tul.nivel === 'dan');
@@ -285,16 +298,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 15,
   },
-  planPro: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#DFFFE2',
-    padding: 10,
-    borderRadius: 8,
-    flex: 1,
-    marginRight: 10,
-    justifyContent: 'center',
-  },
+planPro: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  alignSelf: 'flex-start',       // Alinea a la izquierda
+  backgroundColor: '#DFFFE2',
+  paddingVertical: 4,
+  paddingHorizontal: 10,
+  borderRadius: 20,              // Redondeado como una etiqueta
+  marginTop: 10,
+},
+
   planText: {
     fontWeight: 'bold',
   },
@@ -311,6 +325,12 @@ const styles = StyleSheet.create({
   theoryText: {
     fontWeight: 'bold',
   },
+  proIcon: {
+  width: 16,
+  height: 16,
+  resizeMode: 'contain',
+  marginRight: 6,
+},
 });
 
 export default DanesScreen;

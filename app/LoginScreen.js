@@ -1,166 +1,219 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, Text, Image, StyleSheet, Dimensions, ScrollView, Alert, Platform } from 'react-native';
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  Text,
+  Image,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Platform,
+  SafeAreaView,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/header';
 import Footer from '../components/footer';
 
-const { width, height } = Dimensions.get('window');
-
 export default function LoginForm() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const navigation = useNavigation();
   const [serverUrl, setServerUrl] = useState('');
 
-  // Detectar IP correcta según plataforma
+  useEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
   useEffect(() => {
     const baseUrl =
       Platform.OS === 'android'
-        ? 'http://181.44.118.209' // emulador Android
-        : 'http://localhost:5000'; // iOS simulator o navegador
+        ? 'https://taekwondoitfapp.com'
+        : 'https://taekwondoitfapp.com';
     setServerUrl(baseUrl);
   }, []);
 
   const handleLogin = async () => {
-    if (!username || !password) {
-      Alert.alert('Error', 'Por favor, ingrese todos los campos.');
+    setErrorMessage('');
+
+    if (!username.trim() || !password.trim()) {
+      const msg = 'Por favor, ingrese todos los campos.';
+      setErrorMessage(msg);
+      Alert.alert('Error', msg);
       return;
     }
 
     const userData = {
-      email: username, // El backend espera 'email'
-      password: password,
+      email: username.trim(),
+      password: password.trim(),
     };
 
     try {
       const response = await fetch(`${serverUrl}/api/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
       });
 
       const data = await response.json();
+      console.log('Respuesta del backend:', data);
 
       if (response.ok) {
-        console.log('Inicio de sesión exitoso:', data);
-        
-        // Guardar el usuario en AsyncStorage
         await AsyncStorage.setItem('user', JSON.stringify(data.user || data));
-
-        // Verificar el rol del usuario
+        setErrorMessage('');
         const user = data.user || data;
         if (user.role === 'admin') {
-          // Si es admin, navegar a 'homeadmin'
           navigation.navigate('homeadmin');
         } else {
-          // Si no es admin, navegar a 'home'
           navigation.navigate('home');
         }
-
       } else {
-        Alert.alert('Error', data.message || 'Credenciales incorrectas.');
+        const msg = data.message || 'Credenciales incorrectas.';
+        setErrorMessage(msg);
+        Alert.alert('Error', msg);
       }
     } catch (error) {
       console.error('Error de red:', error);
-      Alert.alert('Error de red', 'No se pudo conectar al servidor.');
+      const msg = 'No se pudo conectar al servidor.';
+      setErrorMessage(msg);
+      Alert.alert('Error de red', msg);
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Header />
-      <View style={styles.formContainer}>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+        <Header />
+
+        {/* Título arriba de la imagen */}
+        <Text style={styles.title}>Iniciar sesión</Text>
+
         <Image
           source={require('../assets/images/TaeKwonDo.jpg')}
-          style={[styles.banner, { height: height * 0.25 }]}
-          resizeMode="contain"
+          style={styles.banner}
+          resizeMode="cover"
         />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Correo electrónico"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={username}
-          onChangeText={setUsername}
-        />
+        <View style={styles.formContainer}>
+          {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="Username"
+            autoCapitalize="none"
+            value={username}
+            onChangeText={setUsername}
+            keyboardType="default"
+            textContentType="username"
+            autoComplete="username"
+          />
 
-        <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-          <Text style={styles.loginText}>Login</Text>
-        </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+            textContentType="password"
+            autoComplete="password"
+          />
 
-        <TouchableOpacity
-          style={styles.resetBtn}
-          onPress={() => navigation.navigate('ResetPassword')}
-        >
-          <Text style={styles.resetText}>Restablecer contraseña</Text>
-        </TouchableOpacity>
-      </View>
-      <Footer />
-    </ScrollView>
+          <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
+            <Text style={styles.loginText}>Iniciar sesión</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.resetBtn}
+            onPress={() => navigation.navigate('ResetPassword')}
+          >
+            <Text style={styles.resetText}>Restablecer contraseña</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Footer />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#fff',
   },
-  formContainer: {
+  container: {
     flex: 1,
-    paddingHorizontal: width * 0.05,
-    justifyContent: 'center',
+  },
+  contentContainer: {
     alignItems: 'center',
-    paddingBottom: height * 0.02,
+    paddingVertical: 10,
+  },
+  title: {
+    width: '90%',
+    maxWidth: 350,
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#000',
+    marginTop: 15,
+    marginBottom: 10,
+    textAlign: 'center',
   },
   banner: {
     width: '100%',
-    borderRadius: 10,
-    marginBottom: height * 0.05,
+    height: 180,
+    borderRadius: 0, // sin bordes redondeados para que ocupe todo
+  },
+  formContainer: {
+    width: '90%',
+    maxWidth: 350,
+    marginTop: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   input: {
     width: '100%',
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 6,
-    padding: width * 0.04,
-    marginBottom: height * 0.02,
-    fontSize: width * 0.04,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    fontSize: 16,
+    color: '#000',
   },
   loginBtn: {
     backgroundColor: '#000',
-    padding: height * 0.02,
+    paddingVertical: 14,
     borderRadius: 6,
-    width: width * 0.9,
+    width: '100%',
     alignItems: 'center',
-    marginBottom: height * 0.02,
+    marginBottom: 15,
   },
   loginText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: width * 0.05,
+    fontSize: 16,
   },
   resetBtn: {
     borderColor: '#000',
     borderWidth: 1,
     borderRadius: 6,
-    padding: height * 0.02,
-    width: width * 0.9,
+    paddingVertical: 12,
+    width: '100%',
     alignItems: 'center',
   },
   resetText: {
     color: '#000',
-    fontSize: width * 0.04,
+    fontSize: 14,
+  },
+  errorText: {
+    width: '100%',
+    color: 'red',
+    marginBottom: 10,
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 });

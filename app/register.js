@@ -14,35 +14,34 @@ export default function RegisterForm() {
   const [repeatPassword, setRepeatPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
   const handleRegister = async () => {
     if (password !== repeatPassword) {
       alert('Las contraseñas no coinciden');
       return;
     }
-  
+
     const userData = { nombre, apellido, email, password };
-  
-    // Verificar si los datos son correctos
-    console.log(userData);
-  
+
     try {
       setLoading(true);
       setError(null);
-  
-      const response = await fetch('http://localhost:5000/api/auth/register-step1', {
+
+      const response = await fetch('https://taekwondoitfapp.com/api/auth/register-step1', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(userData),
       });
-      
-  
+
       const result = await response.json();
-  
+
       if (response.ok) {
         console.log('Usuario registrado:', result);
-        navigation.navigate('ConfirmRegister');
+        // Asumiendo que el backend devuelve el username o un id
+        const username = result.username || email; // Cambia según lo que retorne tu API
+        navigation.navigate('ConfirmRegister', { username }); // Pasamos username al siguiente paso
       } else {
         throw new Error(result.message || 'Error en el registro');
       }
@@ -53,7 +52,6 @@ export default function RegisterForm() {
       setLoading(false);
     }
   };
-  
 
   return (
     <View style={styles.container}>
@@ -89,6 +87,7 @@ export default function RegisterForm() {
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
+          autoCapitalize="none"
         />
         <TextInput
           style={styles.input}
@@ -116,13 +115,13 @@ export default function RegisterForm() {
             {loading ? 'Cargando...' : 'Continuar registro'}
           </Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.cancelBtn}
-          onPress={() => navigation.navigate('LoginScreen')} // Redirige al login
+          onPress={() => navigation.navigate('LoginScreen')} 
         >
           <Text style={styles.cancelText}>Cancelar</Text>
         </TouchableOpacity>
-
       </ScrollView>
       <Footer />
     </View>
@@ -130,64 +129,15 @@ export default function RegisterForm() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  scrollContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 30,
-    alignItems: 'center',
-  },
-  image: {
-    width: '100%',
-    height: 200,
-    borderRadius: 6,
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  input: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 6,
-    padding: 12,
-    marginBottom: 12,
-    fontSize: 16,
-  },
-  registerBtn: {
-    backgroundColor: '#000',
-    paddingVertical: 14,
-    borderRadius: 6,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  registerText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  cancelBtn: {
-    borderColor: '#000',
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingVertical: 14,
-    width: '100%',
-    alignItems: 'center',
-  },
-  cancelText: {
-    color: '#000',
-    fontSize: 16,
-  },
-  errorText: {
-    color: 'red',
-    fontSize: 16,
-    marginBottom: 10,
-  },
+  // (Tus estilos aquí, iguales que los que ya diste)
+  container: { flex: 1, backgroundColor: '#fff' },
+  scrollContainer: { paddingHorizontal: 20, paddingVertical: 30, alignItems: 'center' },
+  image: { width: '100%', height: 200, borderRadius: 6, marginBottom: 10 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' },
+  input: { width: '100%', borderWidth: 1, borderColor: '#ccc', borderRadius: 6, padding: 12, marginBottom: 12, fontSize: 16 },
+  registerBtn: { backgroundColor: '#000', paddingVertical: 14, borderRadius: 6, width: '100%', alignItems: 'center', marginBottom: 10 },
+  registerText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  cancelBtn: { borderColor: '#000', borderWidth: 1, borderRadius: 6, paddingVertical: 14, width: '100%', alignItems: 'center' },
+  cancelText: { color: '#000', fontSize: 16 },
+  errorText: { color: 'red', fontSize: 16, marginBottom: 10 },
 });

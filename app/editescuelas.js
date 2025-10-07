@@ -1,22 +1,16 @@
-// components/EditEscuela.js
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Platform,
-  ActivityIndicator,
-  Alert,
+  View, Text, TextInput, TouchableOpacity,
+  ScrollView, StyleSheet, ActivityIndicator, Platform
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import Header from '../components/header'; // Ajusta la ruta si es necesario
+import Header from '../components/header';
+import Footer from '../components/footer';
+import axios from 'axios';
 
-const DAYS = ['Lunes', 'Martes', 'Miércoles'];
-const CLASSES = ['Niños', 'Adultos', 'Harmony'];
+const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const TURNOS = ['Mañana','Tarde','Noche'];
+const CLASES = ['Niños','Adultos','Harmony','Clases especiales'];
 
 export default function EditEscuela() {
   const navigation = useNavigation();
@@ -25,362 +19,227 @@ export default function EditEscuela() {
 
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
-    nombre: '',
-    direccion: '',
-    ciudad: '',
-    pais: 'ARG',
-    instructor: '',
-    instructor_mayor: '',
-    dias: [],   // ej: ['Lunes', 'Miércoles']
-    clases: [], // ej: ['Niños', 'Harmony']
+    nombre:'', direccion:'', ciudad:'',
+    instructor:'', instructorMayor:'',
+    contacto:'', dias:[], clases:[],
   });
+  const [msg, setMsg] = useState('');
+  const [msgType, setMsgType] = useState('');
 
   useEffect(() => {
-    if (escuelaId != null) {
-      fetch(`http://localhost:5000/api/auth/escuelas/${escuelaId}`)
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error(`HTTP error ${res.status}`);
-          }
-          return res.json();
-        })
-        .then((data) => {
+    if (escuelaId) {
+      axios.get(`https://taekwondoitfapp.com/api/auth/escuelas/${escuelaId}`)
+        .then(res => {
+          const d = res.data;
           setForm({
-            nombre: data.nombre || '',
-            direccion: data.direccion || '',
-            ciudad: data.ciudad || '',
-            pais: data.pais || 'ARG',
-            instructor: data.instructor || '',
-            instructor_mayor: data.instructor_mayor || '',
-            dias: data.dias ? data.dias.split(',') : [],
-            clases: data.clases ? data.clases.split(',') : [],
+            nombre: d.nombre || '',
+            direccion: d.direccion || '',
+            ciudad: d.ciudad || '',
+            instructor: d.instructor || '',
+            instructorMayor: d.instructor_mayor || '',
+            contacto: d.contacto || '',
+            dias: d.dias ? d.dias.split(',') : [],
+            clases: d.clases ? d.clases.split(',') : [],
           });
         })
-        .catch((err) => {
-          console.error('Error al obtener la escuela:', err);
-          Alert.alert('Error', 'No se pudo cargar la escuela.');
+        .catch(err => {
+          console.error(err);
+          setMsg('No se pudo cargar datos');
+          setMsgType('error');
         })
-        .finally(() => {
-          setLoading(false);
-        });
+        .finally(() => setLoading(false));
     }
   }, [escuelaId]);
 
-  const handleInputChange = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+  const handleInput = (field, val) => setForm(f => ({ ...f, [field]: val }));
+  const toggle = (field, val) => {
+    setForm(f => ({
+      ...f,
+      [field]: f[field].includes(val)
+        ? f[field].filter(i => i !== val)
+        : [...f[field], val],
+    }));
+    if (msg) setMsg('');
   };
-
-  const toggle = (type, value) => {
-    setForm((prev) => {
-      const arr = prev[type];
-      if (arr.includes(value)) {
-        return { ...prev, [type]: arr.filter((v) => v !== value) };
-      } else {
-        return { ...prev, [type]: [...arr, value] };
-      }
+const handleDelete = () => {
+  axios.delete(`https://taekwondoitfapp.com/api/auth/escuelas/${escuelaId}`)
+    .then(() => {
+      setMsg('Dojan eliminado exitosamente');
+      setMsgType('success');
+      setTimeout(() => navigation.goBack(), 2000);
+    })
+    .catch(err => {
+      console.error(err);
+      setMsg('No se pudo eliminar el dojan');
+      setMsgType('error');
     });
-  };
+};
 
   const handleSave = () => {
+    const { nombre, direccion, ciudad, instructor, instructorMayor, contacto, dias, clases } = form;
+    if (!nombre || !direccion || !ciudad || !instructor || !instructorMayor || !contacto) {
+      setMsg('Completa todos los campos'); setMsgType('error'); return;
+    }
+    if (dias.length === 0 || clases.length === 0) {
+      setMsg('Selecciona días y clases'); setMsgType('error'); return;
+    }
     const payload = {
-      nombre: form.nombre,
-      direccion: form.direccion,
-      ciudad: form.ciudad,
-      pais: form.pais,
-      instructor: form.instructor,
-      instructor_mayor: form.instructor_mayor,
-      dias: form.dias.join(','),
-      clases: form.clases.join(','),
+      nombre, direccion, ciudad, pais:'ARG',
+      instructor, instructor_mayor: instructorMayor,
+      contacto, dias: dias.join(','), clases: clases.join(',')
     };
-
-    fetch(`http://localhost:5000/api/auth/escuelas/${escuelaId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => {
-        if (!res.ok) {
-          return res.json().then((errBody) => {
-            throw new Error(errBody.message || `HTTP ${res.status}`);
-          });
-        }
-        return res.json();
-      })
+    axios.put(`https://taekwondoitfapp.com/api/auth/escuelas/${escuelaId}`, payload)
       .then(() => {
-        Alert.alert('Éxito', 'Escuela actualizada correctamente.', [
-          { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+        setMsg('Guardado exitoso'); setMsgType('success');
       })
-      .catch((err) => {
-        console.error('Error al actualizar la escuela:', err);
-        Alert.alert('Error', 'No se pudo actualizar la escuela.');
-      });
-  };
-
-  const handleDelete = () => {
-    fetch(`http://localhost:5000/api/auth/escuelas/${escuelaId}`, {
-      method: 'DELETE',
-    })
-      .then((res) => {
-        if (!res.ok) {
-          return res.json().then((errBody) => {
-            throw new Error(errBody.message || `HTTP ${res.status}`);
-          });
-        }
-      })
-      .then(() => {
-        Alert.alert('Eliminado', 'Escuela eliminada correctamente.', [
-          { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
-      })
-      .catch((err) => {
-        console.error('Error al eliminar la escuela:', err);
-        Alert.alert('Error', 'No se pudo eliminar la escuela.');
+      .catch(err => {
+        console.error(err);
+        setMsg('Error al guardar'); setMsgType('error');
       });
   };
 
   if (loading) {
     return (
-      <View style={styles.loaderContainer}>
+      <View style={styles.loader}>
         <ActivityIndicator size="large" color="#000" />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View style={{flex:1, backgroundColor:'#fff'}}>
       <Header />
-
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Editar Escuela</Text>
+        <Text style={styles.heading}>Editar Escuela</Text>
 
-        {/* Nombre */}
-        <Text style={styles.label}>Nombre</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Nombre"
-          placeholderTextColor="#999"
-          value={form.nombre}
-          onChangeText={(text) => handleInputChange('nombre', text)}
-        />
+        {['nombre','direccion','ciudad','instructor','instructorMayor','contacto'].map(field => (
+          <React.Fragment key={field}>
+            <Text style={styles.label}>
+              {{
+                nombre: 'Nombre', direccion: 'Dirección', ciudad: 'Ciudad',
+                instructor: 'Instructor', instructorMayor: 'Instructor Mayor',
+                contacto: 'Contacto'
+              }[field]}
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={form[field]}
+              placeholder=""
+              onChangeText={txt => handleInput(field, txt)}
+              keyboardType={field==='contacto'?'email-address':'default'}
+            />
+          </React.Fragment>
+        ))}
 
-        {/* Dirección */}
-        <Text style={styles.label}>Dirección</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Dirección"
-          placeholderTextColor="#999"
-          value={form.direccion}
-          onChangeText={(text) => handleInputChange('direccion', text)}
-        />
-
-        {/* Ciudad */}
-        <Text style={styles.label}>Ciudad</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ciudad"
-          placeholderTextColor="#999"
-          value={form.ciudad}
-          onChangeText={(text) => handleInputChange('ciudad', text)}
-        />
-
-        {/* País */}
-        <Text style={styles.label}>País</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="País"
-          placeholderTextColor="#999"
-          value={form.pais}
-          onChangeText={(text) => handleInputChange('pais', text)}
-        />
-
-        {/* Instructor */}
-        <Text style={styles.label}>Instructor</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Instructor"
-          placeholderTextColor="#999"
-          value={form.instructor}
-          onChangeText={(text) => handleInputChange('instructor', text)}
-        />
-
-        {/* Instructor mayor */}
-        <Text style={styles.label}>Instructor mayor</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Instructor mayor"
-          placeholderTextColor="#999"
-          value={form.instructor_mayor}
-          onChangeText={(text) => handleInputChange('instructor_mayor', text)}
-        />
-
-        {/* Días y horarios */}
         <Text style={styles.label}>Días y horarios</Text>
-        <View style={styles.row}>
-          {DAYS.map((day) => {
-            const isActive = form.dias.includes(day);
-            return (
-              <TouchableOpacity
-                key={day}
-                style={[
-                  styles.toggleButton,
-                  isActive && styles.activeButton,
-                ]}
-                onPress={() => toggle('dias', day)}
-              >
-                <Text
-                  style={[
-                    styles.toggleText,
-                    isActive && styles.toggleTextActive,
-                  ]}
-                >
-                  {day}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        {DIAS.map(dia => (
+          <View key={dia} style={styles.rowDia}>
+            <Text style={styles.diaTexto}>{dia}:</Text>
+            <View style={styles.turnosContainer}>
+              {TURNOS.map(turno => {
+                const val = `${dia} - ${turno}`, sel = form.dias.includes(val);
+                return (
+                  <TouchableOpacity
+                    key={turno}
+                    style={[styles.toggleBtn, sel && styles.activeBtn]}
+                    onPress={() => toggle('dias', val)}
+                  >
+                    <Text style={sel?styles.toggleTextActive:styles.toggleText}>{turno}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        ))}
 
-        {/* Clases para */}
         <Text style={styles.label}>Clases para</Text>
-        <View style={styles.row}>
-          {CLASSES.map((cls) => {
-            const isActive = form.clases.includes(cls);
-            return (
-              <TouchableOpacity
-                key={cls}
-                style={[
-                  styles.toggleButton,
-                  isActive && styles.activeButton,
-                ]}
-                onPress={() => toggle('clases', cls)}
-              >
-                <Text
-                  style={[
-                    styles.toggleText,
-                    isActive && styles.toggleTextActive,
-                  ]}
-                >
-                  {cls}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+        <View style={styles.row3}>
+          {CLASES.slice(0,3).map(cl => (
+            <TouchableOpacity
+              key={cl}
+              style={[styles.col3, form.clases.includes(cl)&&styles.activeBtn]}
+              onPress={() => toggle('clases', cl)}
+            >
+              <Text style={form.clases.includes(cl)?styles.toggleTextActive:styles.toggleText}>{cl}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
+        {CLASES[3] && (
+          <TouchableOpacity
+            style={[styles.colFull, form.clases.includes(CLASES[3])&&styles.activeBtn]}
+            onPress={() => toggle('clases', CLASES[3])}
+          >
+            <Text style={form.clases.includes(CLASES[3])?styles.toggleTextActive:styles.toggleText}>
+              {CLASES[3]}
+            </Text>
+          </TouchableOpacity>
+        )}
 
-        {/* Botones de acción */}
-        <TouchableOpacity
-          style={[styles.actionButton, styles.saveButton]}
-          onPress={handleSave}
-        >
-          <Text style={styles.saveButtonText}>Guardar cambios</Text>
+        {msg !== '' && (
+          <View style={[styles.msgContainer, msgType==='success'?styles.msgSuccess:styles.msgError]}>
+            <Text style={styles.msgText}>{msg}</Text>
+          </View>
+        )}
+
+        <TouchableOpacity style={[styles.btn, styles.saveBtn]} onPress={handleSave}>
+          <Text style={styles.btnText}>Guardar</Text>
         </TouchableOpacity>
+ <TouchableOpacity
+  style={styles.deleteBtn}
+  onPress={handleDelete}
+>
+  <Text style={styles.deleteText}>Eliminar</Text>
+</TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.actionButton, styles.deleteButton]}
-          onPress={handleDelete}
-        >
-          <Text style={styles.deleteButtonText}>Eliminar</Text>
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.actionButton, styles.cancelButton]}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.cancelButtonText}>Cancelar</Text>
+        <TouchableOpacity style={[styles.btn, styles.cancelBtn]} onPress={() => navigation.goBack()}>
+          <Text style={styles.btnCancel}>Cancelar</Text>
         </TouchableOpacity>
       </ScrollView>
+      <Footer />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  loaderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  container: {
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    alignSelf: 'center',
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 12,
-    marginBottom: 4,
-    color: '#333',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: Platform.OS === 'ios' ? 14 : 10,
-    fontSize: 14,
-    color: '#000',
-    marginBottom: 8,
-  },
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 12,
-  },
-  toggleButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  activeButton: {
-    backgroundColor: '#ccc',
-  },
-  toggleText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  toggleTextActive: {
-    fontWeight: '600',
-  },
-  actionButton: {
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginVertical: 8,
-  },
-  saveButton: {
-    backgroundColor: '#000',
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  deleteButton: {
-    backgroundColor: '#e30613',
-  },
-  deleteButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  cancelButton: {
-    borderWidth: 1,
-    borderColor: '#000',
-    backgroundColor: '#fff',
-  },
-  cancelButtonText: {
-    color: '#000',
-    fontWeight: '600',
-    fontSize: 16,
-  },
+  loader:{flex:1, justifyContent:'center',alignItems:'center'},
+  container:{padding:20},
+  heading:{fontSize:22,fontWeight:'bold',marginBottom:16, alignSelf:'center'},
+  label:{marginTop:12,fontWeight:'600'},
+  input:{borderWidth:1,borderColor:'#ccc',borderRadius:8,padding: Platform.OS==='ios'?14:10, marginBottom:8},
+  rowDia:{flexDirection:'row',alignItems:'center',marginBottom:10},
+  diaTexto:{width:80,fontWeight:'bold'},
+  turnosContainer:{flexDirection:'row',flexWrap:'wrap'},
+  toggleBtn:{backgroundColor:'#f0f0f0',padding:8,paddingHorizontal:12,borderRadius:8,marginRight:8,marginBottom:8},
+  activeBtn:{backgroundColor:'#000'},
+  toggleText:{color:'#000'},
+  toggleTextActive:{color:'#fff',fontWeight:'600'},
+  row3:{flexDirection:'row',justifyContent:'space-between',marginBottom:10},
+  col3:{width:'30%',padding:10,backgroundColor:'#eee',borderRadius:8,alignItems:'center'},
+  colFull:{width:'100%',padding:10,backgroundColor:'#eee',borderRadius:8,alignItems:'center',marginBottom:8},
+  btn:{borderRadius:8,paddingVertical:14,alignItems:'center',marginTop:12},
+  saveBtn:{backgroundColor:'#000'},
+  btnText:{color:'#fff',fontSize:16},
+  cancelBtn:{borderWidth:1,borderColor:'#000',backgroundColor:'#fff'},
+  btnCancel:{color:'#000',fontSize:16},
+  msgContainer:{padding:12,borderRadius:8,marginTop:10},
+  msgSuccess:{backgroundColor:'#d4edda'},
+  msgError:{backgroundColor:'#f8d7da'},
+  msgText:{textAlign:'center',fontWeight:'600'},
+  deleteBtn: {
+  backgroundColor: '#e30613', // rojo fuerte
+  borderColor: '#000',        // borde negro
+  borderWidth: 2,
+  paddingVertical: 12,
+  paddingHorizontal: 20,
+  borderRadius: 8,
+  marginTop: 12,
+  alignItems: 'center',
+},
+deleteText: {
+  color: '#fff',              // texto blanco
+  fontWeight: 'bold',
+  fontSize: 16,
+},
+
 });

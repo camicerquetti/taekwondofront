@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
-import Header from '../components/header'; // Ajusta la ruta si es necesario
+import Header from '../components/header';
 
 export default function EscuelasAdmin() {
   const navigation = useNavigation();
@@ -23,22 +23,17 @@ export default function EscuelasAdmin() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Cambia 'localhost' por la IP de tu servidor si corres en dispositivo/emulador
-    fetch('http://localhost:5000/api/auth/escuelas')
+    fetch('https://taekwondoitfapp.com/api/auth/escuelas')
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
         return res.json();
       })
-      .then((data) => {
-        setEscuelas(data);
-      })
+      .then((data) => setEscuelas(data))
       .catch((err) => {
         console.error('Error al obtener escuelas:', err);
         Alert.alert('Error', 'No se pudieron cargar las escuelas.');
       })
-      .finally(() => {
-        setLoading(false);
-      });
+      .finally(() => setLoading(false));
   }, []);
 
   // Filtrar y ordenar localmente
@@ -50,17 +45,17 @@ export default function EscuelasAdmin() {
     if (sortBy === 'A-Z') {
       data = data.sort((a, b) => a.nombre.localeCompare(b.nombre));
     }
-    // si es 'Nuevos', mantén el orden tal cual vino de la API
-
     return data;
   };
 
   const renderRow = ({ item }) => (
     <View style={styles.row}>
       <Text style={[styles.cell, { flex: 2 }]}>{item.nombre}</Text>
-      <Text style={[styles.cell, { flex: 3 }]}>{item.direccion}</Text>
+      <Text style={[styles.cell, { flex: 2 }]}>{item.instructor || '—'}</Text>
       <Text style={[styles.cell, { flex: 2 }]}>{item.ciudad}</Text>
-      <Text style={[styles.cell, { flex: 1 }]}>{item.pais}</Text>
+      <Text style={[styles.cell, { flex: 2, textAlign: 'center' }]}>
+        {item.total_usuarios || 0}
+      </Text>
       <TouchableOpacity
         style={[styles.cell, { flex: 1, alignItems: 'center' }]}
         onPress={() =>
@@ -88,7 +83,7 @@ export default function EscuelasAdmin() {
         {/* Botón Dashboard */}
         <TouchableOpacity
           style={styles.dashboardBtn}
-          onPress={() => navigation.navigate('Dashboard')}
+          onPress={() => navigation.navigate('homeadmin')}
         >
           <Feather name="home" size={20} color="#000" />
           <Text style={styles.dashboardText}> Dashboard</Text>
@@ -112,34 +107,18 @@ export default function EscuelasAdmin() {
         {/* Ordenar */}
         <View style={styles.sortContainer}>
           <TouchableOpacity
-            style={[
-              styles.sortBtn,
-              sortBy === 'A-Z' ? styles.sortBtnActive : null,
-            ]}
+            style={[styles.sortBtn, sortBy === 'A-Z' && styles.sortBtnActive]}
             onPress={() => setSortBy('A-Z')}
           >
-            <Text
-              style={[
-                styles.sortText,
-                sortBy === 'A-Z' && styles.sortTextActive,
-              ]}
-            >
+            <Text style={[styles.sortText, sortBy === 'A-Z' && styles.sortTextActive]}>
               A-Z
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.sortBtn,
-              sortBy === 'Nuevos' ? styles.sortBtnActive : null,
-            ]}
+            style={[styles.sortBtn, sortBy === 'Nuevos' && styles.sortBtnActive]}
             onPress={() => setSortBy('Nuevos')}
           >
-            <Text
-              style={[
-                styles.sortText,
-                sortBy === 'Nuevos' && styles.sortTextActive,
-              ]}
-            >
+            <Text style={[styles.sortText, sortBy === 'Nuevos' && styles.sortTextActive]}>
               Nuevos
             </Text>
           </TouchableOpacity>
@@ -148,12 +127,10 @@ export default function EscuelasAdmin() {
         {/* Tabla de resultados */}
         <View style={styles.tableHeader}>
           <Text style={[styles.headerCell, { flex: 2 }]}>Nombre</Text>
-          <Text style={[styles.headerCell, { flex: 3 }]}>Dirección</Text>
+          <Text style={[styles.headerCell, { flex: 2 }]}>Instructor</Text>
           <Text style={[styles.headerCell, { flex: 2 }]}>Ciudad</Text>
-          <Text style={[styles.headerCell, { flex: 1 }]}>País</Text>
-          <Text style={[styles.headerCell, { flex: 1, textAlign: 'center' }]}>
-            Acción
-          </Text>
+          <Text style={[styles.headerCell, { flex: 2, textAlign: 'center' }]}>Practicantes</Text>
+          <Text style={[styles.headerCell, { flex: 1, textAlign: 'center' }]}>Acción</Text>
         </View>
 
         <FlatList
@@ -258,5 +235,6 @@ const styles = StyleSheet.create({
   cell: {
     fontSize: 13,
     color: '#555',
+    textAlign: 'center',
   },
 });

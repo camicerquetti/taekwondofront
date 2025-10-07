@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'rea
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';  // Importa el hook useNavigation
-
+import Header from '../components/header';
 
 export default function HomeAdmin() {
   const navigation = useNavigation(); // Usa el hook useNavigation para obtener navigation
@@ -32,13 +32,7 @@ export default function HomeAdmin() {
   return (
     <ScrollView style={styles.container}>
       {/* Header con logo de ancho completo */}
-      <View style={styles.logoContainer}>
-        <Image
-          source={require('../assets/images/Frame 427318921.jpg')}
-          style={styles.logo}
-          resizeMode="cover"
-        />
-      </View>
+    <Header />
 
       {/* Usuario */}
       <View style={styles.userContainer}>
@@ -59,11 +53,12 @@ export default function HomeAdmin() {
       {[ 
         { icon: 'dashboard', label: 'Panel del usuarios', onPress: () =>navigation.navigate('usuarios')  },
         { icon: 'library-books', label: 'Tuls', onPress: () => navigation.navigate('editartuls') },  // Aquí la navegación
-        { icon: 'gesture', label: 'Movimientos Fundamentales', onPress: () => {} },
-        { icon: 'book', label: 'DO (Filosofía)', onPress: () => {} },
+        { icon: 'gesture', label: 'Movimientos Fundamentales',  onPress: () => navigation.navigate('movimientoadmin')},
+        { icon: 'book', label: 'DO (Filosofía)', onPress: () => navigation.navigate('doadmin') },
+       { icon: 'edit', label: 'Explicaciones y recomendaciones', onPress: () => navigation.navigate('editarintroduccion') },
         { icon: 'school', label: 'Academia', onPress: () => navigation.navigate('academiaadmin') },
-        { icon: 'location-on', label: 'Dojanes / Escuelas', onPress: () =>navigation.navigate('dojanadmin') },
-        { icon: 'verified-user', label: 'Usuarios PRO', onPress: () => navigation.navigate('usuarios') },
+        { icon: 'location-on', label: 'Dojang/ Escuelas', onPress: () =>navigation.navigate('dojanadmin') },
+        { icon: 'verified-user', label: 'Usuarios PRO', onPress: () => navigation.navigate('usuariospro') },
       ].map((item, index) => (
         <TouchableOpacity key={index} style={styles.menuItem} onPress={item.onPress}>
           <MaterialIcons name={item.icon} size={24} color="black" />
@@ -72,15 +67,23 @@ export default function HomeAdmin() {
       ))}
 
       {/* Botón Salir */}
-      <TouchableOpacity
-        style={styles.logoutButton}
-        onPress={async () => {
-          await AsyncStorage.removeItem('user');
-          navigation.navigate('login'); // Redirigir a la pantalla de login
-        }}
-      >
-        <Text style={styles.logoutText}>Salir</Text>
-      </TouchableOpacity>
+<TouchableOpacity
+  style={styles.logoutButton}
+  onPress={async () => {
+    try {
+      await AsyncStorage.removeItem('user');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'LoginScreen' }],
+      });
+    } catch (error) {
+      console.log('Error al cerrar sesión:', error);
+    }
+  }}
+>
+  <Text style={styles.logoutText}>Salir</Text>
+</TouchableOpacity>
+
 
       {/* Footer */}
       <Text style={styles.footer}>

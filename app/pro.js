@@ -1,11 +1,14 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-export default function SubscriptionScreen({ navigation }) {
+export default function SubscriptionScreen() {
+  const navigation = useNavigation();
+
   return (
     <View style={styles.container}>
       <Image
-        source={require('../assets/images/pro.jpg')} // Usa una imagen de cinturón negra aquí
+        source={require('../assets/images/pro.jpg')}
         style={styles.image}
         resizeMode="contain"
       />

@@ -1,18 +1,64 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image } from 'react-native';
-import Header from '../components/header'; // Asegurate de que esta ruta sea correcta
+import React, { useEffect, useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Image,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Header from '../components/header';
 import Footer from '../components/footer';
-const handleNavigation = (screenName) => {
-  navigation.navigate(screenName);
+
+export default function MiPerfilScreen() {
+  const navigation = useNavigation();
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('user');
+        if (userData) {
+          const user = JSON.parse(userData);
+          setUserId(user.id);
+        }
+      } catch (error) {
+        console.log('Error obteniendo usuario:', error);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const handleNavigation = (screenName) => {
+    if (screenName === 'perfiledit' && !userId) {
+      alert('No se pudo obtener el usuario');
+      return;
+    }
+    navigation.navigate(screenName, { userId });
+  };
+const handleLogout = async () => {
+  try {
+    await AsyncStorage.removeItem('user'); // Borra los datos
+    navigation.reset({                      // Resetea el stack de navegación
+      index: 0,
+      routes: [{ name: 'LoginScreen' }],
+    });
+  } catch (error) {
+    console.log('Error al cerrar sesión:', error);
+  }
 };
 
 
-const MiPerfilScreen = ({ navigation }) => {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Header />
 
-      {/* Logos */}
       <View style={styles.logosContainer}>
         <Image
           source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/e/e1/ITF_Logo.svg' }}
@@ -20,45 +66,41 @@ const MiPerfilScreen = ({ navigation }) => {
           resizeMode="contain"
         />
         <Image
-          source={{ uri: 'https://via.placeholder.com/150x60?text=Grupo+Norte' }} // Reemplaza con el logo real
+          source={{ uri: 'https://via.placeholder.com/150x60?text=Grupo+Norte' }}
           style={styles.logo}
           resizeMode="contain"
         />
       </View>
 
-      {/* Botones principales */}
- <TouchableOpacity
-  style={styles.button}
-   onPress={() => handleNavigation('perfiledit')}
->
-  <Text style={styles.buttonText}>Editar perfil</Text>
-</TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={() => handleNavigation('perfiledit')}>
+        <Text style={styles.buttonText}>Editar perfil</Text>
+      </TouchableOpacity>
 
-
-      <TouchableOpacity style={styles.button}
-      onPress={() => handleNavigation('instructor')}>
+      <TouchableOpacity style={styles.button} onPress={() => handleNavigation('instructor')}>
         <Text style={styles.buttonText}>Mi instructor</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button}
-      onPress={() => handleNavigation('midojan')}>
-        <Text style={styles.buttonText}>Mi Dojan / escuela</Text>
+      <TouchableOpacity style={styles.button} onPress={() => handleNavigation('midojan')}>
+        <Text style={styles.buttonText}>Mi Dojang / escuela</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}
-        onPress={() => handleNavigation('plan')}>Mi plan</Text>
+      <TouchableOpacity style={styles.button} onPress={() => handleNavigation('plan')}>
+        <Text style={styles.buttonText}>Mi plan</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.blackButton}         onPress={() => handleNavigation('home')}>
-        <Text style={styles.blackButtonText} >Volver</Text>
+      {/* Cerrar sesión */}
+      <TouchableOpacity style={styles.blackButton} onPress={handleLogout}>
+        <Text style={styles.blackButtonText}>Cerrar sesión</Text>
       </TouchableOpacity>
 
-      {/* Footer personalizado */}
+      <TouchableOpacity style={styles.blackButton} onPress={() => handleNavigation('home')}>
+        <Text style={styles.blackButtonText}>Volver</Text>
+      </TouchableOpacity>
+
       <Footer />
     </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -101,5 +143,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-export default MiPerfilScreen;

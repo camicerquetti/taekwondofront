@@ -13,7 +13,7 @@ export default function EditarTuls() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/auth/tules')
+    fetch('https://taekwondoitfapp.com/api/auth/tules')
       .then(response => response.json())
       .then(data => {
         console.log('Datos obtenidos:', data);
@@ -29,11 +29,17 @@ export default function EditarTuls() {
   const gupTuls = tuls.filter(t => t.nivel === 'gup');
   const danes = tuls.filter(t => t.nivel === 'dan');
 
+  // Invertimos los *gupTuls*
+  const gupTulsInvertidos = gupTuls.reverse();
+
   const danesPorGrado = danes.reduce((acc, tul) => {
     if (!acc[tul.grado]) acc[tul.grado] = [];
     acc[tul.grado].push(tul);
     return acc;
   }, {});
+
+  // Invertimos las entradas de los *danesPorGrado*
+  const danesPorGradoInvertidos = Object.entries(danesPorGrado).reverse();
 
   const handleEditTul = (tul) => {
     console.log('Navegando con id:', tul.id);
@@ -58,13 +64,16 @@ export default function EditarTuls() {
     <ScrollView contentContainerStyle={styles.container}>
       <Header />
 
-      <TouchableOpacity style={styles.dashboardBtn}>
-        <Ionicons name="home-outline" size={20} color="#000" />
-        <Text style={styles.dashboardText}>Dashboard</Text>
-      </TouchableOpacity>
+    <TouchableOpacity
+    style={styles.dashboardBtn}
+    onPress={() => navigation.navigate('homeadmin')}
+  >
+    <Ionicons name="home-outline" size={20} color="#000" />
+    <Text style={styles.dashboardText}>Dashboard</Text>
+  </TouchableOpacity>
 
       <Text style={styles.sectionTitle}>Tuls</Text>
-      {gupTuls.map((tul, index) => (
+      {gupTulsInvertidos.map((tul, index) => (  // Mostramos los *gupTuls* invertidos
         <View key={index} style={[styles.tulItem, id === tul.id && { borderColor: 'gold', borderWidth: 2 }]}>
           <Text style={styles.tulName}>{tul.nombre}</Text>
           <View style={styles.colorContainer}>
@@ -82,7 +91,7 @@ export default function EditarTuls() {
       ))}
 
       <Text style={styles.sectionTitle}>Formas Danes</Text>
-      {Object.entries(danesPorGrado).map(([grado, tulsDelGrado], index) => (
+      {danesPorGradoInvertidos.map(([grado, tulsDelGrado], index) => (  // Mostramos los *danesPorGrado* invertidos
         <View key={index} style={styles.danSection}>
           <View style={styles.danHeader}>
             <Text style={styles.danText}>{grado}º Dan</Text>

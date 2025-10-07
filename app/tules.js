@@ -1,20 +1,23 @@
-import React, { useState, useEffect } from 'react'; 
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+} from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import Header from '../components/header';
 import Footer from '../components/footer';
+import { Image } from 'react-native';
+import ProImage from '../assets/images/pro.png';
+import { useNavigation } from '@react-navigation/native';
 
-// Si quieres, mantén colorMap para uso futuro
-const colorMap = {
-  '⚪': '#fff',
-  '🟡': '#FFEB3B',
-  '🟢': '#4CAF50',
-  '🔵': '#2196F3',
-  '🔴': '#F44336',
-  '⚫': '#000',
-  '🟠': '#FF9800',
-  '🟣': '#9C27B0',
-};
+const { width } = Dimensions.get('window');
+const isSmallScreen = width < 360;
 
 const HomeScreen = () => {
   const [tuls, setTuls] = useState([]);
@@ -22,13 +25,17 @@ const HomeScreen = () => {
   const [selectedTul, setSelectedTul] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [tulDetails, setTulDetails] = useState(null);
+  const navigation = useNavigation();
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/auth/tules')
+    fetch('https://taekwondoitfapp.com/api/auth/tules')
       .then(res => res.json())
       .then(data => {
+        // Filtrar los tuls de nivel 'gup'
         const groupTuls = data.filter(tul => tul.nivel === 'gup');
-        setTuls(groupTuls);
+        // Invertir el orden: del último al primero
+        const inverted = [...groupTuls].reverse();
+        setTuls(inverted);
         setLoadingTuls(false);
       })
       .catch(() => {
@@ -37,10 +44,10 @@ const HomeScreen = () => {
       });
   }, []);
 
-  const onSelectTul = (tul) => {
+  const handleTulPress = (tul) => {
     setSelectedTul(tul);
     setLoadingDetails(true);
-    fetch(`http://localhost:5000/api/auth/tules/${tul.id}`)
+    fetch(`https://taekwondoitfapp.com/api/auth/tules/${tul.id}`)
       .then(res => res.json())
       .then(data => {
         setTulDetails(data);
@@ -53,14 +60,26 @@ const HomeScreen = () => {
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#fff', padding: 20 }}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      style={{ flex: 1, backgroundColor: '#fff' }}
+    >
       {!selectedTul ? (
         <>
-          <Header />
-
-          <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' }}>
-            Seleccionar el tul
-          </Text>
+         
+                   <View style={styles.header}>
+           {/* Botón con flecha que lleva a HomeScreen */}
+           <TouchableOpacity onPress={() => navigation.goBack()}>
+             <Text style={styles.backArrow}>← Home</Text>
+           </TouchableOpacity>
+         
+           {/* Botón de menú (☰) a la derecha */}
+           <TouchableOpacity style={styles.menuButton} onPress={() => navigation.goBack()}>
+             <Text style={styles.menuIcon}>☰</Text>
+           </TouchableOpacity>
+         </View>
+         
+          <Text style={styles.title}>Seleccionar el tul</Text>
 
           {loadingTuls ? (
             <ActivityIndicator size="large" color="#000" />
@@ -70,30 +89,33 @@ const HomeScreen = () => {
                 <TouchableOpacity
                   key={index}
                   style={styles.tulItem}
-                  onPress={() => onSelectTul(tul)}
+                  onPress={() => handleTulPress(tul)}
                 >
                   <View style={styles.rowBetween}>
                     <Text style={styles.tulName}>{tul.nombre}</Text>
-
-                    {/* Mostrar emojis tal cual vienen en la base */}
                     <View style={styles.colorContainer}>
                       {[...tul.colores || ''].map((emoji, i) => (
                         <Text key={i} style={styles.emojiText}>{emoji}</Text>
                       ))}
                     </View>
-
-                    {/* Si quieres usar círculos con fondo, descomenta esta línea y comenta el bloque anterior */}
-                    {/* <View style={styles.colorRow}>
-                      {(tul.colores?.split('') || []).map(renderColorCircle)}
-                    </View> */}
                   </View>
                 </TouchableOpacity>
               ))}
 
-              <TouchableOpacity style={styles.boxStyle}>
-                <Text style={styles.boxText}>Formas Danes I - II - III - IV - V - VI</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.boxStyle}>
+            <TouchableOpacity style={styles.boxStyle} onPress={() => navigation.navigate('formadedanes')}>
+  <Text style={styles.boxText}>Formas Danes I - II - III - IV - V - VI</Text>
+  
+  <View style={styles.planPro}>
+    <Image source={ProImage} style={styles.proIcon} />
+    <Text style={styles.planText}>Plan Pro</Text>
+  </View>
+</TouchableOpacity>
+
+
+              <TouchableOpacity
+                style={styles.boxStyle}
+                onPress={() => navigation.navigate('introduccion')}
+              >
                 <Text style={styles.boxText}>Explicación y recomendaciones</Text>
               </TouchableOpacity>
             </>
@@ -102,30 +124,43 @@ const HomeScreen = () => {
           <Footer />
         </>
       ) : (
-        <View style={{ flex: 1 }}>
-          <TouchableOpacity onPress={() => { setSelectedTul(null); setTulDetails(null); }}>
-            <Text style={{ fontSize: 16, marginBottom: 15 }}>← Seleccionar Tul</Text>
+        <ScrollView style={{ flex: 1 }}>
+          <TouchableOpacity
+            onPress={() => {
+              setSelectedTul(null);
+              setTulDetails(null);
+            }}
+          >
+            <View style={styles.header}>
+  <TouchableOpacity
+    onPress={() => {
+      setSelectedTul(null);
+      setTulDetails(null);
+    }}
+  >
+    <Text style={styles.backArrow}>← Seleccionar Tul</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity style={styles.menuButton} onPress={() => navigation.goBack()}>
+    <Text style={styles.menuIcon}>☰</Text>
+  </TouchableOpacity>
+</View>
+
           </TouchableOpacity>
 
           {loadingDetails ? (
             <ActivityIndicator size="large" color="#000" />
           ) : tulDetails ? (
             <>
-              <View style={styles.rowBetween}>
-                <Text style={styles.title}>{tulDetails.nombre}</Text>
+            <View style={{ marginBottom: 10 }}>
+  <Text style={styles.detailTitle}>{tulDetails.nombre}</Text>
+  <View style={styles.colorContainer}>
+    {[...tulDetails.colores || ''].map((emoji, i) => (
+      <Text key={i} style={styles.emojiText}>{emoji}</Text>
+    ))}
+  </View>
+</View>
 
-                {/* Mostrar emojis en detalles también */}
-                <View style={styles.colorContainer}>
-                  {[...tulDetails.colores || ''].map((emoji, i) => (
-                    <Text key={i} style={styles.emojiText}>{emoji}</Text>
-                  ))}
-                </View>
-
-                {/* Si quieres círculos con color */}
-                {/* <View style={styles.colorRow}>
-                  {(tulDetails.colores?.split('') || []).map(renderColorCircle)}
-                </View> */}
-              </View>
 
               <Text style={styles.mov}>{tulDetails.movimientos} movimientos</Text>
 
@@ -133,73 +168,84 @@ const HomeScreen = () => {
                 <Text style={styles.bold}>{tulDetails.significado}</Text>
               )}
 
-              {tulDetails.descripcion
-                ?.split('\n\n')
-                .map((p, i) => (
-                  <Text key={i} style={styles.desc}>{p}</Text>
-                ))}
+              {tulDetails.descripcion?.split('\n\n').map((p, i) => (
+                <Text key={i} style={styles.desc}>{p}</Text>
+              ))}
 
-              <TouchableOpacity style={styles.startButton}>
+              <TouchableOpacity
+                style={styles.startButton}
+                onPress={() =>
+                  navigation.navigate('posturas', {
+                    tulId: tulDetails.id,
+                    tulNombre: tulDetails.nombre,
+                  })
+                }
+              >
                 <Text style={styles.startText}>Iniciar</Text>
               </TouchableOpacity>
-
-              <View style={styles.buttonRow}>
+   <View style={styles.buttonRow}>
                 <TouchableOpacity style={styles.planPro}>
-                  <FontAwesome name="tree" size={16} color="black" style={{ marginRight: 5 }} />
+                  <Image source={ProImage} style={styles.proIcon} />
                   <Text style={styles.planText}>Plan Pro</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.theoryButton}>
-                  <Text style={styles.theoryText}>Teoría</Text>
-                </TouchableOpacity>
+           <TouchableOpacity
+  style={styles.theoryButton}
+  onPress={() =>
+    navigation.navigate('teoria', {
+      tulId: tulDetails.id
+    })
+  }
+>
+  <Text style={styles.theoryText}>Teoría</Text>
+</TouchableOpacity>
               </View>
             </>
           ) : (
             <Text>No se encontraron detalles para este tul.</Text>
           )}
-        </View>
+        </ScrollView>
       )}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+    paddingBottom: 40,
+  },
   title: {
-    fontSize: 28,
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  detailTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
     marginTop: 10,
+    flexShrink: 1,
   },
   rowBetween: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   colorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    marginTop: 4,
   },
   emojiText: {
     fontSize: 20,
     marginLeft: 5,
   },
-  // El resto de estilos igual a los tuyos
-  colorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  colorCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    marginLeft: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#999',
-  },
   tulItem: {
     backgroundColor: '#000',
-    padding: 10,
+    padding: 12,
     borderRadius: 10,
     marginBottom: 12,
   },
@@ -207,6 +253,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    flexShrink: 1,
+    maxWidth: '80%',
   },
   mov: {
     marginTop: 20,
@@ -240,6 +288,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 15,
+    flexWrap: 'wrap',
   },
   planPro: {
     flexDirection: 'row',
@@ -248,8 +297,9 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     flex: 1,
-    marginRight: 10,
+    marginRight: 5,
     justifyContent: 'center',
+    marginBottom: 10,
   },
   planText: {
     fontWeight: 'bold',
@@ -263,21 +313,62 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: 5,
+    marginBottom: 10,
   },
   theoryText: {
     fontWeight: 'bold',
   },
   boxStyle: {
-    backgroundColor: '#eee',
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 15,
-    alignItems: 'center',
-  },
-  boxText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  backgroundColor: '#fff',     // Fondo blanco
+  borderWidth: 1,              // Borde visible
+  borderColor: '#000',         // Borde negro
+  padding: 15,
+  borderRadius: 10,
+  marginTop: 15,
+  alignItems: 'center',
+},
+boxText: {
+  fontSize: 16,
+  fontWeight: '600',
+  textAlign: 'center',
+},
+
+  header: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  paddingHorizontal: 16,
+  paddingVertical: 10,
+  backgroundColor: '#fff',
+  borderBottomWidth: 1,
+  borderBottomColor: '#ccc',
+},
+
+backArrow: {
+  fontSize: 16,
+  color: '#000',
+},
+
+menuButton: {
+  backgroundColor: '#000',
+  paddingHorizontal: 12,
+  paddingVertical: 6,
+  borderRadius: 18,
+},
+
+menuIcon: {
+  fontSize: 20,
+  color: '#fff',
+  fontWeight: 'bold',
+},
+proIcon: {
+  width: 24,
+  height: 24,
+  marginRight: 8,
+  resizeMode: 'contain',
+},
+
 });
 
 export default HomeScreen;

@@ -21,13 +21,17 @@ export default function Home() {
   const navigation = useNavigation();
 
   useEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
+  useEffect(() => {
     const fetchUserData = async () => {
       try {
         const userData = await AsyncStorage.getItem('user');
         if (userData) {
           const user = JSON.parse(userData);
           setUserName(user.nombre || user.name || '');
-          setUserPlan(user.plan || 'basico'); // por defecto 'basico'
+          setUserPlan(user.plan || 'basico');
         }
       } catch (error) {
         console.error('Error al obtener usuario de AsyncStorage:', error);
@@ -53,79 +57,73 @@ export default function Home() {
           Bienvenida {userName || 'Usuario'}
         </Text>
 
-        <Text style={styles.planText}>
-          Plan actual: {userPlan === 'pro' ? 'Pro' : 'Básico'}
-        </Text>
+        <TouchableOpacity style={styles.blackButton} onPress={() => navigation.navigate('perfil')}>
+          <Text style={styles.buttonText}>Ir a perfil</Text>
+        </TouchableOpacity>
 
-        {/* Botones convertidos en View para que no sean presionables */}
-  <TouchableOpacity
-  style={styles.blackButton}
-  onPress={() => navigation.navigate('perfil')}
->
-  <Text style={styles.buttonText}>Ir a perfil</Text>
-</TouchableOpacity>
-
-        {/* Solo la imagen es TouchableOpacity */}
-        <TouchableOpacity
-          style={styles.imageContainer}
-          onPress={() => handleNavigation('tules')}
-        >
+        {/* Imagen principal con overlay y círculos de colores encima */}
+        <TouchableOpacity style={styles.imageContainer} onPress={() => handleNavigation('tules')}>
           <Image
             source={require('../assets/images/imagen.jpg')}
             style={styles.mainImage}
+            resizeMode="cover"
           />
+          <View style={styles.imageOverlay} />
           <Text style={styles.overlayText}>Repaso de Tules o Formas</Text>
+
+          <View style={styles.dotsContainer}>
+            {['#fff', '#f5d442', '#33cc33', '#5617f1', 'red', '#000'].map((color, i) => (
+              <View key={i} style={[styles.dot, { backgroundColor: color }]} />
+            ))}
+          </View>
         </TouchableOpacity>
 
-        <View style={styles.dotsContainer}>
-          {['#f5d442', '#fff', '#c5398f', '#5617f1', '#000'].map((color, i) => (
-            <View key={i} style={[styles.dot, { backgroundColor: color }]} />
-          ))}
-        </View>
+        <TouchableOpacity
+          style={styles.blackButton}
+          onPress={() => {
+            console.log('User Plan:', userPlan);
+            navigation.navigate('continuaracademia', { plan: userPlan });
+          }}
+        >
+          <Text style={styles.buttonText}>Academia</Text>
+        </TouchableOpacity>
 
-       <TouchableOpacity
-  style={styles.grayButton}
-  onPress={() => navigation.navigate('academia')}
->
-  <Text style={styles.grayButtonText}>Academia</Text>
-</TouchableOpacity>
-
-
-        <View style={styles.whiteButton}>
-          <Text style={styles.whiteButtonText}>
-            Explicación y recomendaciones
-          </Text>
-        </View>
+        <TouchableOpacity
+          style={styles.whiteButton}
+          onPress={() => navigation.navigate('introduccion')}
+        >
+          <Text style={styles.whiteButtonText}>Explicación y recomendaciones</Text>
+        </TouchableOpacity>
 
         <View style={styles.doubleImageContainer}>
-          <Image
-            source={require('../assets/images/Frame 3.jpg')}
-            style={styles.sideImage}
-          />
-          <Image
-            source={require('../assets/images/Frame 4.jpg')}
-            style={styles.sideImage}
-          />
+          <Image source={require('../assets/images/Frame 3.jpg')} style={styles.sideImage} />
+          <Image source={require('../assets/images/Frame 4.jpg')} style={styles.sideImage} />
         </View>
 
         <View style={styles.doubleButtonContainer}>
-          <View style={styles.smallBlackButton}>
-            <Text style={styles.buttonText}>Movimientos</Text>
-          </View>
-          <View style={styles.smallBlackButton}>
+          <TouchableOpacity
+            style={styles.smallBlackButton}
+            onPress={() => navigation.navigate('movimiento')}
+          >
+            <Text style={styles.buttonText}>Movimientos Fundamentales</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.smallBlackButton}
+            onPress={() => navigation.navigate('do')}
+          >
             <Text style={styles.buttonText}>DO - Filosofía</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
-     <TouchableOpacity
-  style={styles.blackButton}
-  onPress={() => navigation.navigate('dondepracticar')}
->
-  <Text style={styles.buttonText}>¿A dónde practicar Taekwon-Do?</Text>
-</TouchableOpacity>
-
+        <TouchableOpacity
+          style={styles.blackButton}
+          onPress={() => navigation.navigate('dondepracticar')}
+        >
+          <Text style={styles.buttonText}>¿A dónde practicar Taekwon-Do?</Text>
+        </TouchableOpacity>
+        <Footer />
       </ScrollView>
-      <Footer />
     </View>
   );
 }
@@ -144,12 +142,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginVertical: 10,
   },
-  planText: {
-    fontSize: width * 0.045,
-    fontWeight: '600',
-    color: '#444',
-    marginBottom: 20,
-  },
   blackButton: {
     backgroundColor: '#000',
     width: '100%',
@@ -166,11 +158,23 @@ const styles = StyleSheet.create({
     width: '100%',
     position: 'relative',
     alignItems: 'center',
+    marginBottom: 30,
+    marginTop: 20,
+    height: 180,
+    borderRadius: 5,
+    overflow: 'hidden',
   },
   mainImage: {
     width: '100%',
-    height: height * 0.3,
-    borderRadius: 10,
+    height: '100%',
+  },
+  imageOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   overlayText: {
     position: 'absolute',
@@ -180,26 +184,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   dotsContainer: {
+    position: 'absolute',
+    top: '80%',
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 8,
+    width: '100%',
+    paddingHorizontal: 10,
   },
   dot: {
     width: 12,
     height: 12,
     borderRadius: 6,
     marginHorizontal: 4,
-  },
-  grayButton: {
-    backgroundColor: '#e0e0e0',
-    width: '100%',
-    paddingVertical: height * 0.02,
-    borderRadius: 6,
-    marginTop: 20,
-  },
-  grayButtonText: {
-    textAlign: 'center',
-    fontWeight: '600',
   },
   whiteButton: {
     borderWidth: 1,
@@ -223,6 +219,7 @@ const styles = StyleSheet.create({
     width: '48%',
     height: 160,
     borderRadius: 10,
+    resizeMode: 'contain',
   },
   doubleButtonContainer: {
     flexDirection: 'row',

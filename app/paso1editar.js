@@ -24,59 +24,11 @@ const COLORS = [
   { label: '⚫ Negro', value: '⚫' },
 ];
 
-const MOVIMIENTOS = [
-  { label: 'Movimiento 1', value: 'mov1' },
-  { label: 'Movimiento 2', value: 'mov2' },
-];
-
-function CustomDropdown({ placeholder, data, selectedValue, onValueChange }) {
-  const [open, setOpen] = useState(false);
-  const selectedItem = data.find(item => item.value === selectedValue);
-  const displayLabel = selectedItem ? selectedItem.label : placeholder;
-
-  return (
-    <>
-      <TouchableOpacity
-        style={styles.dropdown}
-        onPress={() => setOpen(true)}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.dropdownText, !selectedItem && styles.placeholderText]}>
-          {displayLabel}
-        </Text>
-        <Ionicons name="chevron-down" size={20} color="#999" style={{ marginRight: 12 }} />
-      </TouchableOpacity>
-
-      <Modal visible={open} transparent animationType="fade">
-        <TouchableWithoutFeedback onPress={() => setOpen(false)}>
-          <View style={styles.modalOverlay} />
-        </TouchableWithoutFeedback>
-        <View style={styles.modalContent}>
-          <FlatList
-            data={data}
-            keyExtractor={item => item.value}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.option}
-                onPress={() => {
-                  onValueChange(item.value);
-                  setOpen(false);
-                }}
-              >
-                <Text style={styles.optionText}>{item.label}</Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      </Modal>
-    </>
-  );
-}
-
 export default function EditarTuls() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { id } = route.params || {};
+const { id, posturaId } = route.params || {};
+
 
   const [nombreTul, setNombreTul] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -85,7 +37,53 @@ export default function EditarTuls() {
   const [colorFinal, setColorFinal] = useState(null);
   const [movimientoEditar, setMovimientoEditar] = useState(null);
   const [contenido, setContenido] = useState('PRO');
+  const [movimientosLista, setMovimientosLista] = useState([]); // Para lista real de movimientos desde posturas
   const [loading, setLoading] = useState(true);
+
+  // Dropdown genérico
+  function CustomDropdown({ placeholder, data, selectedValue, onValueChange }) {
+    const [open, setOpen] = useState(false);
+    const selectedItem = data.find(item => item.value === selectedValue);
+    const displayLabel = selectedItem ? selectedItem.label : placeholder;
+
+    return (
+      <>
+        <TouchableOpacity
+          style={styles.dropdown}
+          onPress={() => setOpen(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.dropdownText, !selectedItem && styles.placeholderText]}>
+            {displayLabel}
+          </Text>
+          <Ionicons name="chevron-down" size={20} color="#999" style={{ marginRight: 12 }} />
+        </TouchableOpacity>
+
+        <Modal visible={open} transparent animationType="fade">
+          <TouchableWithoutFeedback onPress={() => setOpen(false)}>
+            <View style={styles.modalOverlay} />
+          </TouchableWithoutFeedback>
+          <View style={styles.modalContent}>
+            <FlatList
+              data={data}
+              keyExtractor={item => item.value.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.option}
+                  onPress={() => {
+                    onValueChange(item.value);
+                    setOpen(false);
+                  }}
+                >
+                  <Text style={styles.optionText}>{item.label}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </Modal>
+      </>
+    );
+  }
 
   useEffect(() => {
     if (!id) {
@@ -94,7 +92,8 @@ export default function EditarTuls() {
       return;
     }
 
-    fetch(`http://localhost:5000/api/auth/tules/${id}`)
+    // Obtener datos del tul
+    fetch(`https://taekwondoitfapp.com/api/auth/tules/${id}`)
       .then(res => res.json())
       .then(data => {
         setNombreTul(data.nombre || '');
@@ -102,15 +101,74 @@ export default function EditarTuls() {
         setMovimientos(data.movimientos?.toString() || '');
         setColorInicial(data.colorInicial || null);
         setColorFinal(data.colorFinal || null);
-        setContenido(data.contenido || 'PRO');
+     const plan = (data.plan || '').toUpperCase();
+setContenido(plan === 'BASICO' ? 'BASICO' : 'PRO');
+
         setMovimientoEditar(data.movimientoEditar || null);
-        setLoading(false);
       })
       .catch(err => {
         console.error('Error al cargar tul:', err);
+      });
+
+    // Obtener movimientos/posturas del tul para dropdown "movimiento a editar"
+    fetch(`https://taekwondoitfapp.com/api/auth/posturas/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        // Asumo que 'data' es un array con posturas que tienen id y nombre
+        const opciones = data.map(item => ({
+          label: item.nombre || `Movimiento ${item.id}`,
+          value: item.id.toString(),
+        }));
+        setMovimientosLista(opciones);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error al cargar posturas:', err);
         setLoading(false);
       });
   }, [id]);
+useEffect(() => {
+  const unsubscribe = navigation.addListener('focus', () => {
+    if (!id) return;
+
+    setLoading(true);
+
+    // Recarga datos del tul
+    fetch(`https://taekwondoitfapp.com/api/auth/tules/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        setNombreTul(data.nombre || '');
+        setDescripcion(data.descripcion || '');
+        setMovimientos(data.movimientos?.toString() || '');
+        setColorInicial(data.colorInicial || null);
+        setColorFinal(data.colorFinal || null);
+        const plan = (data.plan || '').toUpperCase();
+        setContenido(plan === 'BASICO' ? 'BASICO' : 'PRO');
+        setMovimientoEditar(data.movimientoEditar || null);
+      })
+      .catch(err => {
+        console.error('Error al cargar tul:', err);
+      });
+
+    // Recarga movimientos/posturas para dropdown
+    fetch(`https://taekwondoitfapp.com/api/auth/posturas/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        const opciones = data.map(item => ({
+          label: item.nombre || `Movimiento ${item.id}`,
+          value: item.id.toString(),
+        }));
+        setMovimientosLista(opciones);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error al cargar posturas:', err);
+        setLoading(false);
+      });
+  });
+
+  return unsubscribe;
+}, [navigation, id]);
 
   const handleGuardarCambios = async () => {
     if (!id) return;
@@ -125,7 +183,7 @@ export default function EditarTuls() {
     formData.append("movimientoEditar", movimientoEditar || "");
 
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/tules/${id}`, {
+      const response = await fetch(`https://taekwondoitfapp.com/api/auth/tules/${id}`, {
         method: "PUT",
         body: formData,
       });
@@ -204,10 +262,22 @@ export default function EditarTuls() {
       <Text style={styles.label}>Selecciona un movimiento a editar</Text>
       <CustomDropdown
         placeholder="Selecciona un movimiento a editar"
-        data={MOVIMIENTOS}
+        data={movimientosLista}
         selectedValue={movimientoEditar}
         onValueChange={setMovimientoEditar}
       />
+       <TouchableOpacity
+        style={styles.blackBtn}
+        onPress={() => {
+          if (!movimientoEditar) {
+            alert('Por favor selecciona una postura a editar primero.');
+            return;
+          }
+          navigation.navigate('editarteoria', { id, posturaId: movimientoEditar });
+        }}
+      >
+        <Text style={styles.blackBtnText}>Editar Movimiento </Text>
+      </TouchableOpacity>
 
       <Text style={styles.label}>Contenido:</Text>
       <View style={styles.toggleContainer}>
@@ -225,11 +295,23 @@ export default function EditarTuls() {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.blackBtn} onPress={handleGuardarCambios}>
+      <TouchableOpacity
+        style={styles.blackBtn}
+        onPress={handleGuardarCambios}
+      >
         <Text style={styles.blackBtnText}>Guardar cambios</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.blackBtn} onPress={() => navigation.navigate('editarteoria', { id })}>
+      <TouchableOpacity
+        style={styles.blackBtn}
+        onPress={() => {
+          if (!movimientoEditar) {
+            alert('Por favor selecciona una postura a editar primero.');
+            return;
+          }
+          navigation.navigate('editteo', { id, posturaId: movimientoEditar });
+        }}
+      >
         <Text style={styles.blackBtnText}>Editar Teoría</Text>
       </TouchableOpacity>
 
@@ -314,37 +396,4 @@ const styles = StyleSheet.create({
   whiteBtnText: { color: '#000', textAlign: 'center', fontWeight: '600' },
   footer: { textAlign: 'center', marginTop: 20, fontSize: 12, color: '#888' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  imagePickerArea: {
-    height: 200,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    marginBottom: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  imagePreview: {
-    width: '100%',
-    height: '100%',
-  },
-  imagePlaceholder: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imagePlaceholderText: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 8,
-  },
-  imageName: {
-    position: 'absolute',
-    bottom: 4,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    color: '#fff',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    fontSize: 12,
-    borderRadius: 4,
-  },
 });

@@ -28,7 +28,7 @@ export default function ResetPasswordForm() {
     try {
       console.log('Enviando solicitud a /reset-password con:', email);
 
-      const response = await fetch('http://localhost:5000/api/auth/reset-password', {
+      const response = await fetch('https://taekwondoitfapp.com/api/auth/reset-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,7 +62,7 @@ export default function ResetPasswordForm() {
       />
 
       <View style={styles.formContainer}>
-        <Text style={styles.header}>Resetea tu contraseña</Text>
+        <Text style={styles.header}>Resetear tu contraseña</Text>
 
         <TextInput
           style={styles.input}

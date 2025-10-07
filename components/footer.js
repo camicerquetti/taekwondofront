@@ -1,37 +1,85 @@
 import React from 'react';
-import { View, Image, StyleSheet, Dimensions } from 'react-native';
-
-// Obtener el ancho de la pantalla
-const { width } = Dimensions.get('window');
+import { View, Text, Image, StyleSheet } from 'react-native';
 
 export default function Footer() {
   return (
-    <View style={styles.container}>
-      <Image
-        source={require('../assets/images/Frame 427318939 (1).jpg')}
-        style={styles.footerLogo}
-        resizeMode="contain" // Asegura que la imagen se ajuste sin distorsionarse
-      />
+    <View style={styles.footerWrapper}>
+      <View style={styles.blackLine} />
+
+      <View style={styles.container}>
+        <View style={styles.innerContainer}>
+          <Image
+            source={require('../assets/images/itf-logo.svg')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <View style={styles.textContent}>
+            <Text style={styles.mainText}>
+              Plataforma basada en editoriales de Fabián Izquierdo y la enciclopedia del Taekwon-Do.
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.bottomTextContainer}>
+          <Text style={styles.subText}>
+            Thinking with <Text style={styles.boldText}>Mindcircus Agency.</Text>
+          </Text>
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    marginTop: 0,
-    paddingHorizontal: 0,  // Aseguramos un padding horizontal adaptable
+  footerWrapper: {
     backgroundColor: '#fff',
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
+    alignItems: 'center',
   },
-  footerLogo: {
-    width: '100%', // Ocupa el 100% del ancho de la pantalla
-    height: width * 0.2, // Ajustamos la altura en función del ancho de la pantalla (proporcional)
-    marginBottom: 8,
+  blackLine: {
+    height: 1,
+    backgroundColor: '#000',
+    width: '100%',
+    marginTop: 25,
+  },
+  container: {
+    paddingVertical: 5,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+  },
+  innerContainer: {
+    width: 340,
+    height: 53.088, // Fijo según lo pedido
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20, // Solo en web. En móvil lo simulamos abajo
+  },
+  logo: {
+    width: 90,
+    height: 55,
+    marginRight: 20, // Simula el gap entre logo y texto
+  },
+  textContent: {
+    flex: 1,
+  },
+  mainText: {
+    fontSize: 10.5,
+    color: '#000',
+    lineHeight: 16,
+    flexShrink: 1,
+    opacity: 1,
+  },
+  bottomTextContainer: {
+    width: 340,
+    height: 16,
+    marginTop: 8,
+    opacity: 1,
+  },
+  subText: {
+    fontSize: 11,
+    color: '#888',
+  },
+  boldText: {
+    fontWeight: 'bold',
+    color: '#000',
   },
 });
