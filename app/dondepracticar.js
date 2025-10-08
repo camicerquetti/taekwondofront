@@ -20,7 +20,7 @@ export default function DondePracticar() {
   const [direccion, setDireccion] = useState('');
   const [mapCenter, setMapCenter] = useState({ latitude: -34.6037, longitude: -58.3816 });
   const [userLocation, setUserLocation] = useState(null);
-  const GOOGLE_MAPS_API_KEY = 'AIzaSyDWmsOa6axy4YhPs1PMGSzMQBhqf4d8wyA';
+  const GOOGLE_MAPS_API_KEY = '';
   const mapRef = useRef(null);
   const markersRef = useRef([]);
 const [paginaActual, setPaginaActual] = useState(0);
